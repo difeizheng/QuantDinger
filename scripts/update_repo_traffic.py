@@ -131,17 +131,43 @@ def main() -> int:
     baseline_views = int(data.get("baseline_views") or 0)
     baseline_clones = int(data.get("baseline_clones") or 0)
 
+    api_errors: list[str] = []
+    clones_ok = False
+    views_ok = False
+
     try:
         clones = _api_get("clones", token, owner, repo)
         clone_days = _merge_days(clone_days, clones.get("clones") or [])
+        clones_ok = True
     except urllib.error.HTTPError as exc:
-        print(f"clones API failed: {exc}", file=sys.stderr)
+        body = exc.read().decode(errors="replace") if exc.fp else ""
+        msg = f"clones API failed: HTTP {exc.code} {exc.reason}"
+        if body:
+            msg += f" — {body[:500]}"
+        api_errors.append(msg)
+        print(msg, file=sys.stderr)
 
     try:
         views = _api_get("views", token, owner, repo)
         view_days = _merge_days(view_days, views.get("views") or [])
+        views_ok = True
     except urllib.error.HTTPError as exc:
-        print(f"views API failed: {exc}", file=sys.stderr)
+        body = exc.read().decode(errors="replace") if exc.fp else ""
+        msg = f"views API failed: HTTP {exc.code} {exc.reason}"
+        if body:
+            msg += f" — {body[:500]}"
+        api_errors.append(msg)
+        print(msg, file=sys.stderr)
+
+    if api_errors and not (clones_ok or views_ok):
+        print(
+            "GitHub Traffic API requires a token with push/admin access to this repo. "
+            "The default GITHUB_TOKEN often returns 403 — set repository secret "
+            "GH_TRAFFIC_TOKEN to a classic PAT with `repo` scope (or fine-grained "
+            "Administration: Read + Metadata: Read).",
+            file=sys.stderr,
+        )
+        return 1
 
     views_total = baseline_views + sum(view_days.values())
     clones_total = baseline_clones + sum(clone_days.values())

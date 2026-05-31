@@ -22,7 +22,8 @@ jobs:
 
       - name: Update clone/view totals
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Traffic endpoints need push/admin access; GITHUB_TOKEN often gets 403.
+          GITHUB_TOKEN: ${{ secrets.GH_TRAFFIC_TOKEN || secrets.GITHUB_TOKEN }}
         run: python scripts/update_repo_traffic.py
 
       - name: Commit metrics
