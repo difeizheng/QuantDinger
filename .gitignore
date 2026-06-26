@@ -92,3 +92,13 @@ backend_api_python/data/memory/
 # Docker
 # ========================
 docker-compose.override.yml
+
+# ========================
+# Local database data (Postgres volume mounted from host)
+# ========================
+postgres_data/
+
+# ========================
+# Personal local scripts (not part of the project)
+# ========================
+run_claude.bat
